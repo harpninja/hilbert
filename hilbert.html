@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+ 	<head>
+ 		<meta http-equiv='Content-Type' content='text/html;charset=utf-8'/>
+		<title>Hilbert Curve</title>
+		<script src='https://d3js.org/d3.v4.min.js'></script>
+		<style>
+		body {
+			font-family: Verdana, sans-serif;
+			font-size: 1em;
+			color: #555555;
+			background: #ffffff;
+			margin-left: 20px;
+			margin-top: 20px;
+		}
+
+		.line {
+			fill: none;
+			stroke: #000000;
+			stroke-width: 1px;
+		}
+		</style>
+ 	</head>
+
+ 	<body>
+	<p>Hilbert curve with L-systems.<br>
+	<a href='https://github.com/harpninja/hilbert'>Code on GitHub</a>.
+	</p>
+	<form>
+	iterations: <select id='iterations'>
+					<option value='1'>1</option>
+					<option value='2'>2</option>
+					<option value='3'>3</option>
+					<option value='4'>4</option>
+					<option value='5'>5</option>
+					<option value='6'>6</option>
+					<option value='7'>7</option>
+					<option value='8'>8</option>
+				</select>
+	<button type='button' onclick='draw()'>draw</button>
+	</form>
+
+    <script>
+    'use strict'
+		const margin = {top: 20, right: 20, bottom: 20, left: 20}
+		const width = 1064 - margin.left - margin.right
+		const height = 1064 - margin.top - margin.bottom
+
+		const line = d3.line()
+				.x(function(d) { return d.x; })
+				.y(function(d) { return d.y; })
+
+		const svg = d3.select('body').append('svg')
+			.attr('width', width + margin.left + margin.right)
+			.attr('height', height + margin.top + margin.bottom)
+
+		svg.append('rect')
+		    .attr('width', '100%')
+		    .attr('height', '100%')
+		    .attr('fill', '#ffffff')
+
+		/**
+		 * draw!
+		 * Draw a Hilbert curve
+		 * Alphabet : A, B
+		 * Constants : F + −
+		 * Axiom : A
+		 * Production rules:
+		 * 		A → − B F + A F A + F B −
+		 *		B → + A F − B F B − F A +
+		 * Where:
+		 * 		F is draw forward
+		 * 		- is turn left 90 degrees
+		 * 	 	+ is turn right 90 degrees
+		 * 		A and B are ignored during drawing
+		 * References:
+		 *		The Algorithmic Beauty of Plants by Przemyslaw Prusinkiewicz and Aristid Lindenmayer
+		 * 		https://en.wikipedia.org/wiki/Hilbert_curve
+		 */
+		function draw()
+		{
+			erase()
+			const angle = 90
+			const generators = {A: '+BF-AFA-FB+', B: '-AF+BFB+FA-'}		// to draw from top left hand corner of svg
+			const axiom = 'A'
+			let grammar = axiom
+			const iterations = parseInt(document.getElementById('iterations').value)
+			let distance = width/Math.pow(2, iterations)
+
+			for (let i = 0; i < iterations; ++i)
+			{
+			    grammar = replaceToken(grammar, generators)
+			}
+
+			let path = svg.append('path')
+				.attr('class', 'line')
+				.attr('d', line(parseGrammar(grammar, angle, distance)))
+		}
+
+		/**
+		 * replaceToken
+		 * @param {string} grammar
+		 * @param {string} generators
+		 * @returns {string} new grammar where A and B are replaced with generator strings
+		 */
+		function replaceToken(grammar, generators)
+		{
+			let array = grammar.split('')
+			for (let i = 0; i < array.length; i++)
+			{
+				if (array[i] == 'A')
+					array[i] = generators.A
+				if (array[i] == 'B')
+					array[i] = generators.B
+			}
+			let str = array.toString()
+			str = str.replace(/,/g, '')
+			return str
+		}
+
+		/**
+		 * parseGrammar
+		 * @param {string} grammar
+		 * @param {number} turning angle in degrees
+		 * @param {number} line length
+		 * @returns {array} array of line coordinate objects for drawing
+		 */
+		function parseGrammar(g, a, d)
+		{
+			let x = 0 + margin.left
+			let y = 0 + margin.top
+
+			let line_data = []
+			let point_data = []
+			let direction = ''
+			line_data.push({x: x, y: y, i: 0, direction: direction})	// initialise line data object
+			let c = g.replace(/A|B/g, '')
+			c = c.split('')		// convert grammar string to array of chars
+
+			for (let i = 0; i < c.length; i++)
+			{
+				switch (c[i]) {
+					case '+':
+						a = a + 90
+						break
+					case '-':
+						a = a - 90
+						break
+					case 'F':
+						if ((a == 0) || (a == 360))	// up
+						{
+							y = y - d
+							direction = 'up'
+						}
+						else if ((a == 270) || (a == -90)) // left
+						{
+							x = x - d
+							direction = 'left'
+						}
+						else if ((a == 90) || (a == -270))   // right
+						{
+							x = x + d
+							direction = 'right'
+						}
+						else if ((a == 180) || (a == -180)) // down
+						{
+							y = y + d
+							direction = 'down'
+						}
+						line_data.push({x: x, y: y, i: i, a: a, direction: direction})
+						break
+				}
+				if ((a <= -360) || (a >= 360))
+				{
+					a = 0
+				}
+			}
+			return line_data
+		}
+
+		/**
+		 * erase
+		 * Clear all paths.
+		 */
+		function erase()
+		{
+			d3.selectAll('path').remove()
+		}
+	</script>
+  </body>
+</html>
