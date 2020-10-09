@@ -1,5 +1,5 @@
 # Hilbert Curve
-D3 Hilbert Curve. [Interactive version](http://www.animatedcreations.net/d3/hilbert/hilbert.html).
+D3 Hilbert Curve. [Interactive version](https://harpninja.github.io/hilbert/).
 
 ## References
 * The Algorithmic Beauty of Plants by Przemyslaw Prusinkiewicz and Aristid Lindenmayer.
